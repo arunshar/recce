@@ -52,8 +52,9 @@ screenplay scene
 ## Demo mode (no keys needed)
 
 With no API keys set, Recce runs in **demo mode** against a bundled sample
-screenplay and cached responses, so the entire flow works offline. Add keys to
-`.env` to run the live pipeline on any scene.
+screenplay and cached responses, so the entire flow works offline. Golden-hour
+times are computed for real even in demo mode. Add keys to `.env` to run the
+live pipeline on any scene.
 
 ## Quickstart
 
@@ -64,26 +65,47 @@ make backend                # terminal 1: http://localhost:8000
 make frontend               # terminal 2: http://localhost:5173
 ```
 
-Build the single-container production bundle:
+Open http://localhost:5173, click **Sample**, then **Find locations**.
+
+## Build, test, deploy
 
 ```bash
-make build                  # frontend -> backend/app/static
-make docker-build           # builds recce:latest
+make build                  # frontend -> backend/app/static (single-container bundle)
+make test                   # backend pytest smoke tests (demo mode, no keys)
+make docker-build           # build recce:latest locally (requires Docker running)
+bash scripts/deploy_cloud_run.sh
 ```
+
+The deploy script runs `gcloud run deploy --source backend`, which builds the
+image remotely with Cloud Build (no local Docker needed) and returns a public
+URL. Set the keys in `.env` first to deploy the live pipeline; otherwise the
+deployed app runs in demo mode.
 
 ## Keys
 
 | Key | Where | Needed for |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | https://aistudio.google.com/apikey | scene understanding, vision scoring, packet |
-| `GOOGLE_MAPS_API_KEY` | Google Maps Platform (Places API New + Street View Static) | live candidate search + Street View |
+| `GOOGLE_MAPS_API_KEY` | Google Maps Platform (Places API New + Street View Static + Geocoding) | live candidate search and Street View |
 
 Without keys, demo mode covers the full flow.
 
-## Status
+## Project layout
 
-Built over a weekend for a hackathon. See `docs/` for the architecture notes,
-one-pager, demo script, and how Recce maps to the judging rubric.
+```
+backend/app/   gemini.py  places.py  routing.py  astro.py  packet.py  routes.py  main.py
+backend/tests/ test_pipeline.py
+frontend/src/  App.tsx  api.ts  types.ts  components/{MapView,CandidateCard}.tsx
+docs/          one-pager.md  demo-script.md  judging-map.md  architecture.md
+scripts/       deploy_cloud_run.sh
+```
+
+## Docs
+
+- [docs/architecture.md](docs/architecture.md): data flow, components, design decisions.
+- [docs/one-pager.md](docs/one-pager.md): the submission one-pager.
+- [docs/demo-script.md](docs/demo-script.md): 2-minute intro and 1-minute demo scripts.
+- [docs/judging-map.md](docs/judging-map.md): how Recce maps to the judging rubric.
 
 ## License
 
