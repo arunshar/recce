@@ -1,0 +1,83 @@
+[
+  {
+    "scene_id": "S1",
+    "slugline": "INT. SALTWATER DINER - DAWN",
+    "int_ext": "INT",
+    "location_type": "retro seaside diner",
+    "time_of_day": "DAWN",
+    "period": "present day",
+    "mood": ["melancholy", "noir", "quiet", "cold"],
+    "key_visual_elements": [
+      "chrome counter and cracked vinyl booths",
+      "fogged windows facing the ocean",
+      "half-dead neon OPEN sign",
+      "coffee urn and steam"
+    ],
+    "practical_needs": [
+      "early-morning access before opening hours",
+      "power for interior lighting",
+      "parking for grip and lighting trucks",
+      "clear ocean sightline through the windows"
+    ],
+    "search_queries": [
+      "classic American diner with ocean view Los Angeles",
+      "retro chrome diner Long Beach",
+      "vintage seaside diner Santa Monica",
+      "old-school waterfront diner Malibu"
+    ]
+  },
+  {
+    "scene_id": "S2",
+    "slugline": "EXT. CLIFFSIDE LIGHTHOUSE - DUSK",
+    "int_ext": "EXT",
+    "location_type": "coastal lighthouse on a windswept headland",
+    "time_of_day": "DUSK",
+    "period": "present day",
+    "mood": ["isolated", "dramatic", "windswept", "ominous"],
+    "key_visual_elements": [
+      "whitewashed lighthouse tower",
+      "narrow cliff path through wet grass",
+      "surf hammering black rocks below",
+      "slowly rotating lamp at dusk"
+    ],
+    "practical_needs": [
+      "golden-hour and dusk scheduling",
+      "fall protection and safety on cliff edges",
+      "wind protection for camera and crew",
+      "generator power at a remote site"
+    ],
+    "search_queries": [
+      "lighthouse on a cliff Southern California",
+      "coastal lighthouse near Los Angeles",
+      "Point Vicente lighthouse Rancho Palos Verdes",
+      "historic lighthouse on a headland California coast"
+    ]
+  },
+  {
+    "scene_id": "S3",
+    "slugline": "EXT. RAIN-SOAKED ALLEY - NIGHT",
+    "int_ext": "EXT",
+    "location_type": "narrow brick alley behind a shuttered theater",
+    "time_of_day": "NIGHT",
+    "period": "present day",
+    "mood": ["tense", "noir", "claustrophobic", "wet"],
+    "key_visual_elements": [
+      "tight brick walls",
+      "iron fire escapes",
+      "marquee and neon reflections in puddles",
+      "single sodium street lamp"
+    ],
+    "practical_needs": [
+      "night-shoot filming permit",
+      "rain effects and a water truck",
+      "power for lighting and haze",
+      "traffic control at the alley mouth"
+    ],
+    "search_queries": [
+      "brick alley downtown Los Angeles",
+      "historic theater alley with fire escapes Los Angeles",
+      "film-friendly alleyway Los Angeles",
+      "old theater district back alley Los Angeles"
+    ]
+  }
+]
