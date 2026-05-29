@@ -2,6 +2,8 @@
 
 **AI location scouting, from script to shoot day.**
 
+**Live demo:** https://recce-216756172879.us-central1.run.app (runs in demo mode, no setup needed)
+
 Paste a screenplay scene. Recce uses Gemini to read it like a location manager
 would, finds and visually scores real-world filming locations against the
 director's brief, maps them, plans an efficient scout-day route across the ones
@@ -127,6 +129,7 @@ scripts/       deploy_cloud_run.sh
 
 ## Docs
 
+- [docs/submission.md](docs/submission.md): staged content for the hackathon submission.
 - [docs/go-live.md](docs/go-live.md): step-by-step to add keys, run live, and deploy.
 - [docs/architecture.md](docs/architecture.md): data flow, components, design decisions.
 - [docs/one-pager.md](docs/one-pager.md): the submission one-pager.
