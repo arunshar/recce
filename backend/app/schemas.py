@@ -90,6 +90,16 @@ class Packet(BaseModel):
     notes: str = ""
 
 
+class LocationNotes(BaseModel):
+    """AI-generated (or canned) production notes for one location in the packet."""
+
+    parking: list[str] = Field(default_factory=list)
+    nearest_hospital: str = ""
+    power_note: str = ""
+    permit_note: str = ""
+    shotlist: list[str] = Field(default_factory=list)
+
+
 # ---- Request bodies ----
 
 class AnalyzeRequest(BaseModel):

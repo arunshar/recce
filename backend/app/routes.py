@@ -1,13 +1,20 @@
-"""API routes. Endpoints grow phase by phase."""
+"""API routes for the full scout pipeline."""
 
 from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Response
 
-from . import gemini, places
+from . import gemini, packet as packet_mod, places, routing
 from .config import get_settings
-from .schemas import AnalyzeRequest, CandidatesRequest
+from .schemas import (
+    AnalyzeRequest,
+    CandidatesRequest,
+    Packet,
+    PacketRequest,
+    RouteRequest,
+    RouteResult,
+)
 
 router = APIRouter(prefix="/api")
 settings = get_settings()
@@ -68,6 +75,23 @@ def candidates(req: CandidatesRequest) -> dict:
         "demo_mode": settings.demo_mode,
         "candidates": out,
     }
+
+
+@router.post("/route", response_model=RouteResult)
+def route(req: RouteRequest) -> RouteResult:
+    """Optimize a scout-day route across the shortlisted candidates."""
+    base_city = req.base_city or settings.default_base_city
+    center = places.geocode(base_city)
+    return routing.optimize(center, base_city, req.candidates)
+
+
+@router.post("/packet", response_model=Packet)
+def packet(req: PacketRequest) -> Packet:
+    """Generate the shoot-day logistics packet for the shortlisted candidates."""
+    base_city = req.base_city or settings.default_base_city
+    return packet_mod.build_packet(
+        req.candidates, req.briefs, base_city, req.shoot_date, req.production_title
+    )
 
 
 @router.get("/streetview")

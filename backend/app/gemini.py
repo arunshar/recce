@@ -1,9 +1,8 @@
 """Gemini integration.
 
-Scene understanding (Phase 1) and Street View vision scoring (Phase 2). The
-shoot-day packet (Phase 4) and mood images (stretch) extend this module. When no
-Gemini key is set, every function falls back to bundled demo data so the full
-flow works offline.
+Scene understanding (Phase 1), Street View vision scoring (Phase 2), and shoot-day
+production notes (Phase 4). When no Gemini key is set, callers fall back to bundled
+demo data / canned notes so the full flow works offline.
 """
 
 import json
@@ -12,7 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from .config import get_settings
-from .schemas import SceneBrief, VisionScore
+from .schemas import LocationNotes, SceneBrief, VisionScore
 
 settings = get_settings()
 DEMO_DIR = Path(__file__).parent / "demo_data"
@@ -150,6 +149,54 @@ def score_candidate(brief: SceneBrief, image_bytes: Optional[bytes]) -> VisionSc
     except Exception as exc:
         print(f"[recce] vision scoring failed: {exc}")
     return VisionScore()
+
+
+# ---- Phase 4: shoot-day production notes ----
+
+NOTES_SYSTEM_INSTRUCTION = """You are a line producer and location manager preparing a shoot-day packet
+for one filming location. Given the scene brief and the real location, produce practical notes:
+- parking: 1 to 3 concrete parking / basecamp suggestions for trucks and crew.
+- nearest_hospital: a brief instruction or known nearby hospital to confirm.
+- power_note: a power plan (house power vs generator) appropriate to the scene.
+- permit_note: permit guidance for this jurisdiction and shoot type (call out night shoots,
+  effects, or road closures).
+- shotlist: 3 to 5 starter shots that serve the scene's mood and key visual elements.
+Keep it concise and production-real."""
+
+
+def generate_location_notes(brief: Optional[SceneBrief], cand) -> LocationNotes:
+    """Gemini-generated shoot-day notes for one location. Empty notes without a key."""
+    client = _get_client()
+    if client is None:
+        return LocationNotes()
+
+    from google.genai import types
+
+    brief_text = _brief_text(brief) if brief else "No scene brief available."
+    prompt = (
+        f"Scene brief:\n{brief_text}\n\n"
+        f"Location: {cand.name}, {cand.address} (lat {cand.lat}, lng {cand.lng}).\n"
+        "Write the shoot-day notes for this location."
+    )
+    try:
+        resp = client.models.generate_content(
+            model=settings.gemini_pro_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=NOTES_SYSTEM_INSTRUCTION,
+                response_mime_type="application/json",
+                response_schema=LocationNotes,
+                temperature=0.4,
+            ),
+        )
+        notes = resp.parsed
+        if isinstance(notes, dict):
+            notes = LocationNotes(**notes)
+        if isinstance(notes, LocationNotes):
+            return notes
+    except Exception as exc:
+        print(f"[recce] location notes failed: {exc}")
+    return LocationNotes()
 
 
 # ---- demo fallbacks ----
