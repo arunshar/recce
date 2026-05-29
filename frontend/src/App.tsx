@@ -38,6 +38,8 @@ export default function App() {
   const [packet, setPacket] = useState<Packet | null>(null)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  const [moodImages, setMoodImages] = useState<Record<string, string>>({})
+  const [moodBusy, setMoodBusy] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     api.getHealth().then(setHealth).catch(() => {})
@@ -115,6 +117,23 @@ export default function App() {
     }
   }
 
+  const makeMood = async (brief: SceneBrief) => {
+    setError('')
+    setMoodBusy((prev) => new Set(prev).add(brief.scene_id))
+    try {
+      const url = await api.generateMoodboard(brief)
+      setMoodImages((prev) => ({ ...prev, [brief.scene_id]: url }))
+    } catch (e) {
+      fail(e, 'Mood board failed: ')
+    } finally {
+      setMoodBusy((prev) => {
+        const next = new Set(prev)
+        next.delete(brief.scene_id)
+        return next
+      })
+    }
+  }
+
   return (
     <div className="flex h-full flex-col bg-slate-950 text-slate-100">
       <header className="flex h-14 flex-none items-center justify-between border-b border-slate-800 px-4">
@@ -179,6 +198,25 @@ export default function App() {
                     <Chip key={i}>{m}</Chip>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => makeMood(b)}
+                  disabled={moodBusy.has(b.scene_id)}
+                  className="mt-1.5 rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                >
+                  {moodBusy.has(b.scene_id)
+                    ? 'Generating mood board...'
+                    : moodImages[b.scene_id]
+                      ? 'Regenerate mood board'
+                      : 'Mood board'}
+                </button>
+                {moodImages[b.scene_id] && (
+                  <img
+                    src={moodImages[b.scene_id]}
+                    alt={`${b.slugline} mood board`}
+                    className="mt-2 w-full rounded-lg border border-slate-800"
+                  />
+                )}
                 <div className="mt-2 space-y-2">
                   {candidates
                     .filter((c) => c.scene_id === b.scene_id)

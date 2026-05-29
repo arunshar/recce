@@ -201,6 +201,64 @@ def generate_location_notes(brief: Optional[SceneBrief], cand) -> LocationNotes:
     return LocationNotes()
 
 
+# ---- stretch: concept mood-board images ----
+
+def _mood_prompt(brief: SceneBrief) -> str:
+    bits = [
+        "Cinematic concept frame, photographic film still, anamorphic, atmospheric lighting, no text, no watermark.",
+        f"Scene: {brief.location_type or brief.slugline}.",
+    ]
+    if brief.time_of_day:
+        bits.append(f"Time of day: {brief.time_of_day}.")
+    if brief.period and brief.period != "present day":
+        bits.append(f"Era: {brief.period}.")
+    if brief.mood:
+        bits.append(f"Mood: {', '.join(brief.mood)}.")
+    if brief.key_visual_elements:
+        bits.append(f"Featuring: {', '.join(brief.key_visual_elements[:4])}.")
+    return " ".join(bits)
+
+
+@lru_cache(maxsize=64)
+def _generate_image_cached(prompt: str) -> Optional[bytes]:
+    client = _get_client()
+    if client is None:
+        return None
+
+    from google.genai import types
+
+    try:
+        resp = client.models.generate_images(
+            model=settings.image_model,
+            prompt=prompt,
+            config=types.GenerateImagesConfig(number_of_images=1, aspect_ratio="16:9"),
+        )
+        data = resp.generated_images[0].image.image_bytes
+        if data:
+            return bytes(data)
+    except Exception as exc:
+        print(f"[recce] imagen generation failed, trying fallback: {exc}")
+
+    try:
+        resp = client.models.generate_content(
+            model=settings.image_fallback_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(response_modalities=["IMAGE"]),
+        )
+        for part in resp.candidates[0].content.parts:
+            inline = getattr(part, "inline_data", None)
+            if inline and inline.data:
+                return bytes(inline.data)
+    except Exception as exc:
+        print(f"[recce] image generation failed: {exc}")
+    return None
+
+
+def generate_mood_image(brief: SceneBrief) -> Optional[bytes]:
+    """A cinematic concept frame for a scene's mood. None when no key/model is available."""
+    return _generate_image_cached(_mood_prompt(brief))
+
+
 # ---- demo fallbacks ----
 
 @lru_cache

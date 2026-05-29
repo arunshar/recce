@@ -126,3 +126,16 @@ def placephoto(ref: str = "", name: str = "") -> Response:
             return Response(content=image, media_type="image/jpeg")
     svg = places.placeholder_svg(name or "Location", "Photo preview in demo mode")
     return Response(content=svg, media_type="image/svg+xml")
+
+
+@router.post("/moodboard")
+def moodboard(brief: SceneBrief) -> Response:
+    """Generate a cinematic concept frame for a scene's mood (Imagen / Gemini image)."""
+    if settings.has_gemini:
+        image = gemini.generate_mood_image(brief)
+        if image is not None:
+            return Response(content=image, media_type="image/png")
+    svg = places.placeholder_svg(
+        brief.slugline or brief.location_type or "Scene", "Mood board preview in demo mode"
+    )
+    return Response(content=svg, media_type="image/svg+xml")

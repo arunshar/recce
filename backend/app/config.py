@@ -24,6 +24,8 @@ class Settings:
         self.maps_api_key = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
         self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
         self.gemini_pro_model = os.getenv("GEMINI_PRO_MODEL", "gemini-2.5-pro").strip()
+        self.image_model = os.getenv("RECCE_IMAGE_MODEL", "imagen-4.0-fast-generate-001").strip()
+        self.image_fallback_model = os.getenv("RECCE_IMAGE_FALLBACK_MODEL", "gemini-2.5-flash-image").strip()
         self.default_base_city = os.getenv("RECCE_BASE_CITY", "Los Angeles, CA").strip()
 
         origins = os.getenv("RECCE_CORS_ORIGINS", "*").strip()

@@ -43,3 +43,14 @@ export const generatePacket = (
   production_title?: string,
 ) =>
   postJSON<Packet>('/api/packet', { candidates, briefs, base_city, shoot_date, production_title })
+
+export async function generateMoodboard(brief: SceneBrief): Promise<string> {
+  const r = await fetch('/api/moodboard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(brief),
+  })
+  if (!r.ok) throw new Error(`/api/moodboard responded ${r.status}`)
+  const blob = await r.blob()
+  return URL.createObjectURL(blob)
+}
