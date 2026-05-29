@@ -16,13 +16,23 @@ if ! command -v gcloud >/dev/null 2>&1; then
   exit 1
 fi
 
-# Forward keys from .env (if present) as Cloud Run environment variables.
+# Read a single value from .env WITHOUT shell-sourcing it (values may contain
+# spaces or quotes, which would break `source`).
+read_env() {
+  [ -f "$ROOT/.env" ] || return 0
+  local line
+  line="$(grep -E "^$1=" "$ROOT/.env" 2>/dev/null | tail -1 || true)"
+  line="${line#*=}"
+  line="${line%\"}"; line="${line#\"}"
+  line="${line%\'}"; line="${line#\'}"
+  printf '%s' "$line"
+}
+
 ENV_PAIRS=()
-if [ -f "$ROOT/.env" ]; then
-  set -a; . "$ROOT/.env"; set +a
-fi
-[ -n "${GEMINI_API_KEY:-}" ] && ENV_PAIRS+=("GEMINI_API_KEY=${GEMINI_API_KEY}")
-[ -n "${GOOGLE_MAPS_API_KEY:-}" ] && ENV_PAIRS+=("GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}")
+GEMINI_API_KEY="$(read_env GEMINI_API_KEY)"
+GOOGLE_MAPS_API_KEY="$(read_env GOOGLE_MAPS_API_KEY)"
+[ -n "$GEMINI_API_KEY" ] && ENV_PAIRS+=("GEMINI_API_KEY=${GEMINI_API_KEY}")
+[ -n "$GOOGLE_MAPS_API_KEY" ] && ENV_PAIRS+=("GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}")
 
 SET_ENV=()
 if [ ${#ENV_PAIRS[@]} -gt 0 ]; then
