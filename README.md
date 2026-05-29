@@ -102,6 +102,7 @@ scripts/       deploy_cloud_run.sh
 
 ## Docs
 
+- [docs/go-live.md](docs/go-live.md): step-by-step to add keys, run live, and deploy.
 - [docs/architecture.md](docs/architecture.md): data flow, components, design decisions.
 - [docs/one-pager.md](docs/one-pager.md): the submission one-pager.
 - [docs/demo-script.md](docs/demo-script.md): 2-minute intro and 1-minute demo scripts.
