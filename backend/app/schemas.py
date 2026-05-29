@@ -39,6 +39,14 @@ class Candidate(BaseModel):
     flags: list[str] = Field(default_factory=list)
 
 
+class VisionScore(BaseModel):
+    """Gemini's verdict on one candidate's Street View image vs. the brief."""
+
+    match_score: int = 0        # 0 to 100
+    rationale: str = ""
+    flags: list[str] = Field(default_factory=list)
+
+
 class RouteStop(BaseModel):
     order: int
     candidate_id: str

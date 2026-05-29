@@ -1,0 +1,82 @@
+[
+  {
+    "id": "s1c1", "scene_id": "S1", "name": "Ocean View Diner",
+    "address": "100 Ocean Blvd, Long Beach, CA", "lat": 33.7701, "lng": -118.1937,
+    "place_id": "", "rating": 4.3, "types": ["diner", "restaurant"],
+    "match_score": 85,
+    "rationale": "Chrome counter and big harbor-facing windows read exactly like the script's dawn diner, and the vinyl booths are period-right.",
+    "flags": ["confirm pre-opening access for a dawn call"]
+  },
+  {
+    "id": "s1c2", "scene_id": "S1", "name": "Chrome & Vinyl Diner",
+    "address": "200 N Pacific Coast Hwy, Redondo Beach, CA", "lat": 33.8492, "lng": -118.3884,
+    "place_id": "", "rating": 4.1, "types": ["diner"],
+    "match_score": 74,
+    "rationale": "Strong retro interior, but the ocean sits across a parking lot, so the window sightline needs a long lens.",
+    "flags": ["ocean not directly visible from booths"]
+  },
+  {
+    "id": "s1c3", "scene_id": "S1", "name": "Santa Monica Pier Pancakes",
+    "address": "330 Santa Monica Pier, Santa Monica, CA", "lat": 34.0094, "lng": -118.4973,
+    "place_id": "", "rating": 4.0, "types": ["restaurant"],
+    "match_score": 67,
+    "rationale": "Great pier light and ocean backdrop, but the room is bright and touristy rather than melancholy.",
+    "flags": ["high foot traffic", "tone skews cheerful"]
+  },
+  {
+    "id": "s1c4", "scene_id": "S1", "name": "Malibu Seaside Cafe",
+    "address": "22878 Pacific Coast Hwy, Malibu, CA", "lat": 34.0383, "lng": -118.6770,
+    "place_id": "", "rating": 4.2, "types": ["cafe"],
+    "match_score": 61,
+    "rationale": "Beautiful ocean frontage, but it reads modern-coastal, so heavy set dressing would be needed for the noir tone.",
+    "flags": ["modern decor", "permit cost likely high"]
+  },
+  {
+    "id": "s2c1", "scene_id": "S2", "name": "Point Vicente Lighthouse",
+    "address": "31550 Palos Verdes Dr W, Rancho Palos Verdes, CA", "lat": 33.7423, "lng": -118.4106,
+    "place_id": "", "rating": 4.7, "types": ["tourist_attraction", "point_of_interest"],
+    "match_score": 92,
+    "rationale": "Whitewashed tower on a true cliff with surf below; the dusk light wraps the headland just as scripted.",
+    "flags": ["Coast Guard coordination for access", "cliff-edge safety plan required"]
+  },
+  {
+    "id": "s2c2", "scene_id": "S2", "name": "Point Fermin Lighthouse",
+    "address": "807 W Paseo Del Mar, San Pedro, CA", "lat": 33.7053, "lng": -118.2936,
+    "place_id": "", "rating": 4.6, "types": ["tourist_attraction"],
+    "match_score": 80,
+    "rationale": "Clifftop Victorian lighthouse in a park; charming and accessible, but more manicured than windswept.",
+    "flags": ["park hours limit dusk shooting", "wood structure, not whitewashed stone"]
+  },
+  {
+    "id": "s2c3", "scene_id": "S2", "name": "Marina del Rey Breakwater Light",
+    "address": "Marina del Rey, CA", "lat": 33.9619, "lng": -118.4517,
+    "place_id": "", "rating": 4.2, "types": ["point_of_interest"],
+    "match_score": 54,
+    "rationale": "A working light, but it sits on a flat jetty with no cliff and no crashing surf.",
+    "flags": ["no cliff", "boat traffic in background"]
+  },
+  {
+    "id": "s3c1", "scene_id": "S3", "name": "Werdin Place",
+    "address": "Werdin Pl, Los Angeles, CA", "lat": 34.0469, "lng": -118.2487,
+    "place_id": "", "rating": 4.4, "types": ["route"],
+    "match_score": 88,
+    "rationale": "A genuine narrow brick alley off Broadway with iron fire escapes; a longtime film alley that needs little dressing.",
+    "flags": ["night permit", "notify neighboring businesses"]
+  },
+  {
+    "id": "s3c2", "scene_id": "S3", "name": "Broadway Theater District Alley",
+    "address": "S Broadway, Los Angeles, CA", "lat": 34.0444, "lng": -118.2509,
+    "place_id": "", "rating": 4.3, "types": ["route"],
+    "match_score": 84,
+    "rationale": "Marquee neon spill plus a wet-down would reflect beautifully; brick walls and iron are all there.",
+    "flags": ["traffic control at alley mouth", "active foot traffic at night"]
+  },
+  {
+    "id": "s3c3", "scene_id": "S3", "name": "Arts District Service Alley",
+    "address": "Traction Ave, Los Angeles, CA", "lat": 34.0410, "lng": -118.2330,
+    "place_id": "", "rating": 4.1, "types": ["route"],
+    "match_score": 76,
+    "rationale": "Industrial brick and loading docks; grittier and easier to lock off, but there is no theater marquee nearby.",
+    "flags": ["no marquee light source", "add practical neon"]
+  }
+]

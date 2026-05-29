@@ -1,8 +1,9 @@
 """Gemini integration.
 
-Phase 1 ships scene understanding. Vision scoring (Phase 2), the shoot-day packet
-(Phase 4), and mood images (stretch) extend this module. When no Gemini key is set,
-every function falls back to bundled demo data so the full flow works offline.
+Scene understanding (Phase 1) and Street View vision scoring (Phase 2). The
+shoot-day packet (Phase 4) and mood images (stretch) extend this module. When no
+Gemini key is set, every function falls back to bundled demo data so the full
+flow works offline.
 """
 
 import json
@@ -11,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from .config import get_settings
-from .schemas import SceneBrief
+from .schemas import SceneBrief, VisionScore
 
 settings = get_settings()
 DEMO_DIR = Path(__file__).parent / "demo_data"
@@ -26,6 +27,8 @@ def _get_client():
 
     return genai.Client(api_key=settings.gemini_api_key)
 
+
+# ---- Phase 1: scene understanding ----
 
 SCENE_SYSTEM_INSTRUCTION = """You are an expert film location manager and first assistant director.
 Read the screenplay text and break it into one structured location brief per distinct
@@ -93,6 +96,63 @@ def extract_scene_briefs(
         print(f"[recce] Gemini scene extraction failed, using demo briefs: {exc}")
     return _demo_briefs()
 
+
+# ---- Phase 2: Street View vision scoring ----
+
+VISION_SYSTEM_INSTRUCTION = """You are a location scout reviewing a Street View image of a candidate
+filming location against a director's brief. Judge how well this real place could serve the scene,
+either as-is or with reasonable set dressing. Return:
+- match_score: 0 to 100, where 100 is a perfect on-camera match.
+- rationale: one or two sentences, specific to what you actually see in the image.
+- flags: short practical concerns, e.g. "modern signage visible", "power lines in frame",
+  "heavy foot traffic", "no cliff in view". Empty list if none."""
+
+
+def _brief_text(brief: SceneBrief) -> str:
+    return (
+        f"{brief.slugline}\n"
+        f"Type: {brief.location_type} | {brief.int_ext} | {brief.time_of_day} | {brief.period}\n"
+        f"Mood: {', '.join(brief.mood)}\n"
+        f"Must have on camera: {', '.join(brief.key_visual_elements)}"
+    )
+
+
+def score_candidate(brief: SceneBrief, image_bytes: Optional[bytes]) -> VisionScore:
+    """Score one candidate's Street View image against the brief. Returns a zero
+    score when no client/image is available; callers supply demo scores instead."""
+    client = _get_client()
+    if client is None or not image_bytes:
+        return VisionScore()
+
+    from google.genai import types
+
+    prompt = (
+        f"Director's brief:\n{_brief_text(brief)}\n\n"
+        "Score the location shown in the attached image against this brief."
+    )
+    try:
+        resp = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=[prompt, types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")],
+            config=types.GenerateContentConfig(
+                system_instruction=VISION_SYSTEM_INSTRUCTION,
+                response_mime_type="application/json",
+                response_schema=VisionScore,
+                temperature=0.2,
+            ),
+        )
+        vs = resp.parsed
+        if isinstance(vs, dict):
+            vs = VisionScore(**vs)
+        if isinstance(vs, VisionScore):
+            vs.match_score = max(0, min(100, int(vs.match_score)))
+            return vs
+    except Exception as exc:
+        print(f"[recce] vision scoring failed: {exc}")
+    return VisionScore()
+
+
+# ---- demo fallbacks ----
 
 @lru_cache
 def _demo_briefs_raw() -> str:
