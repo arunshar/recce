@@ -1,4 +1,4 @@
-.PHONY: install backend frontend dev build docker-build deploy clean
+.PHONY: install backend frontend dev build docker-build deploy test clean
 
 install:
 	cd backend && python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
@@ -19,6 +19,9 @@ build:
 	cd frontend && npm run build
 	rm -rf backend/app/static && mkdir -p backend/app/static
 	cp -r frontend/dist/. backend/app/static/
+
+test:
+	cd backend && . .venv/bin/activate && pip install -q -r requirements-dev.txt && python -m pytest -q
 
 docker-build: build
 	docker build -t recce:latest backend
