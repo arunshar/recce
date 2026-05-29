@@ -53,8 +53,14 @@ screenplay scene
 
 ## Run with Docker (one command)
 
-The whole app (frontend + API) builds and runs in a single container. No Node or
-Python toolchain needed, just Docker.
+The published multi-arch image (amd64 + arm64) runs anywhere, no clone and no build:
+
+```bash
+docker run -p 8000:8080 arunsharma08/recce      # then open http://localhost:8000
+```
+
+Or build it from source. The whole app (frontend + API) builds and runs in a single
+container. No Node or Python toolchain needed, just Docker.
 
 ```bash
 docker compose up --build         # then open http://localhost:8000
