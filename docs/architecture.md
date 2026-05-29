@@ -28,10 +28,10 @@ shortlist + briefs      -> astral + Gemini notes         -> shoot-day packet
 - **Our own routing.** A 2-opt optimizer keeps the routing dependency-free and in-house, with the Google Routes API available as a future enhancement.
 - **One container.** The frontend is built into the backend's `static/` directory, so a single Cloud Run service serves everything at one URL.
 
-## Deploy
+## Run and deploy
 
-- Recommended: `bash scripts/deploy_cloud_run.sh` runs `gcloud run deploy --source backend`, which builds the image remotely with Cloud Build (no local Docker needed) and returns a public URL.
-- Local image build: `make docker-build` (requires a running Docker daemon).
+- One container, anywhere: `docker compose up --build` (or `make up`), then open http://localhost:8000. A multi-stage Dockerfile builds the frontend and backend in-image; demo mode needs no keys.
+- Cloud Run: `bash scripts/deploy_cloud_run.sh` runs `gcloud run deploy --source .`, which builds the image remotely with Cloud Build (no local Docker needed) and returns a public URL.
 
 ## Roadmap
 

@@ -1,0 +1,15 @@
+# Cloud Build upload ignores for `gcloud run deploy --source .`
+# The multi-stage Dockerfile builds the frontend, so frontend/ source IS uploaded;
+# built artifacts, deps, and secrets are not.
+.git
+.gitignore
+.env
+.env.*
+.claude
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+frontend/dist
+frontend/.vite
+backend/app/static

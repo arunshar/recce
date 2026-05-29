@@ -1,8 +1,0 @@
-# Cloud Build upload ignores. Note: app/static IS uploaded (the built frontend),
-# so this file intentionally does not exclude it (unlike .gitignore).
-.venv/
-__pycache__/
-*.pyc
-.env
-tests/
-requirements-dev.txt

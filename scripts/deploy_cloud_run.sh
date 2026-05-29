@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Deploy Recce to Google Cloud Run as a single container (API + built frontend).
+# The multi-stage Dockerfile builds the frontend, so Cloud Build does everything;
+# no local Docker or Node needed.
 # Prereqs: gcloud SDK installed and authenticated, a billing-enabled project selected.
 #   gcloud auth login && gcloud config set project YOUR_PROJECT
 # Usage: bash scripts/deploy_cloud_run.sh   (override REGION / SERVICE via env vars)
@@ -14,9 +16,6 @@ if ! command -v gcloud >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "==> Building frontend into backend/app/static"
-( cd "$ROOT" && make build )
-
 # Forward keys from .env (if present) as Cloud Run environment variables.
 ENV_PAIRS=()
 if [ -f "$ROOT/.env" ]; then
@@ -30,9 +29,9 @@ if [ ${#ENV_PAIRS[@]} -gt 0 ]; then
   SET_ENV=(--set-env-vars "$(IFS=,; echo "${ENV_PAIRS[*]}")")
 fi
 
-echo "==> Deploying '$SERVICE' to Cloud Run in $REGION"
+echo "==> Deploying '$SERVICE' to Cloud Run in $REGION (Cloud Build builds the image from the Dockerfile)"
 gcloud run deploy "$SERVICE" \
-  --source "$ROOT/backend" \
+  --source "$ROOT" \
   --region "$REGION" \
   --allow-unauthenticated \
   --port 8080 \

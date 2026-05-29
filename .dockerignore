@@ -1,0 +1,16 @@
+# Keep the build context small and never bake secrets or built artifacts into the image.
+.git
+.gitignore
+.env
+.env.*
+*.md
+docs
+.claude
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+frontend/dist
+frontend/.vite
+backend/app/static
+backend/tests

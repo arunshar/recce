@@ -1,4 +1,4 @@
-.PHONY: install backend frontend dev build docker-build deploy test clean
+.PHONY: install backend frontend dev build test docker-build docker-run up deploy clean
 
 install:
 	cd backend && python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
@@ -23,8 +23,14 @@ build:
 test:
 	cd backend && . .venv/bin/activate && pip install -q -r requirements-dev.txt && python -m pytest -q
 
-docker-build: build
-	docker build -t recce:latest backend
+docker-build:
+	docker build -t recce:latest .
+
+docker-run: docker-build
+	docker run --rm -p 8000:8080 -e GEMINI_API_KEY -e GOOGLE_MAPS_API_KEY recce:latest
+
+up:
+	docker compose up --build
 
 deploy:
 	bash scripts/deploy_cloud_run.sh

@@ -28,7 +28,7 @@ screenplay scene
 [ Google Places ]  candidate real-world locations per brief
       |
       v
-[ Street View + Gemini vision ]  score each candidate vs. the brief (0-100 + why)
+[ venue photo + Gemini vision ]  score each candidate vs. the brief (0-100 + why)
       |
       v
 [ map + shortlist ]  you pick the contenders
@@ -37,7 +37,7 @@ screenplay scene
 [ 2-opt route optimizer + astral ]  scout-day route, golden-hour aware
       |
       v
-[ Gemini ]  shoot-day logistics packet (exportable one-pager)
+[ Gemini ]  shoot-day packet  +  [ Imagen ]  per-scene mood-board frames
 ```
 
 - **Frontend:** Vite + React + TypeScript + Tailwind, map via Leaflet +
@@ -47,16 +47,40 @@ screenplay scene
   browser.
 - **Routing:** our own scout-day optimizer (nearest-neighbor seed + 2-opt) over
   shortlisted locations with travel-time estimates.
-- **Deploy:** one container to Google Cloud Run.
+- **Deploy:** one self-contained container (Docker / Cloud Run).
+
+## Run with Docker (one command)
+
+The whole app (frontend + API) builds and runs in a single container. No Node or
+Python toolchain needed, just Docker.
+
+```bash
+docker compose up --build         # then open http://localhost:8000
+```
+
+It runs in **demo mode** by default (no keys, full flow on bundled sample data).
+To go live, add your keys to a `.env` file (compose reads it automatically) or
+pass them inline:
+
+```bash
+GEMINI_API_KEY=... GOOGLE_MAPS_API_KEY=... docker compose up --build
+```
+
+Equivalent without compose:
+
+```bash
+docker build -t recce .
+docker run --rm -p 8000:8080 recce                 # demo mode
+docker run --rm -p 8000:8080 --env-file .env recce # live (after: cp .env.example .env)
+```
 
 ## Demo mode (no keys needed)
 
-With no API keys set, Recce runs in **demo mode** against a bundled sample
-screenplay and cached responses, so the entire flow works offline. Golden-hour
-times are computed for real even in demo mode. Add keys to `.env` to run the
-live pipeline on any scene.
+With no API keys set, Recce runs against a bundled sample screenplay and cached
+responses, so the entire flow works offline. Golden-hour times are computed for
+real even in demo mode. Add keys to `.env` to run the live pipeline on any scene.
 
-## Quickstart
+## Local development (without Docker)
 
 ```bash
 cp .env.example .env        # optional: add GEMINI_API_KEY + GOOGLE_MAPS_API_KEY
@@ -70,22 +94,22 @@ Open http://localhost:5173, click **Sample**, then **Find locations**.
 ## Build, test, deploy
 
 ```bash
-make build                  # frontend -> backend/app/static (single-container bundle)
-make test                   # backend pytest smoke tests (demo mode, no keys)
-make docker-build           # build recce:latest locally (requires Docker running)
+make build          # frontend -> backend/app/static (for the local single-port run)
+make test           # backend pytest smoke tests (demo mode, no keys)
+make docker-build   # build the recce:latest image
+make up             # docker compose up --build
 bash scripts/deploy_cloud_run.sh
 ```
 
-The deploy script runs `gcloud run deploy --source backend`, which builds the
-image remotely with Cloud Build (no local Docker needed) and returns a public
-URL. Set the keys in `.env` first to deploy the live pipeline; otherwise the
-deployed app runs in demo mode.
+The deploy script runs `gcloud run deploy --source .`, which builds the image
+remotely with Cloud Build (no local Docker needed) and returns a public URL. Set
+the keys in `.env` first to deploy the live pipeline; otherwise it runs in demo mode.
 
 ## Keys
 
 | Key | Where | Needed for |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | https://aistudio.google.com/apikey | scene understanding, vision scoring, packet |
+| `GEMINI_API_KEY` | https://aistudio.google.com/apikey | scene understanding, vision scoring, packet, mood boards |
 | `GOOGLE_MAPS_API_KEY` | Google Maps Platform (Places API New + Street View Static + Geocoding) | live candidate search and Street View |
 
 Without keys, demo mode covers the full flow.
@@ -93,10 +117,11 @@ Without keys, demo mode covers the full flow.
 ## Project layout
 
 ```
-backend/app/   gemini.py  places.py  routing.py  astro.py  packet.py  routes.py  main.py
+Dockerfile  docker-compose.yml          # one-command container
+backend/app/  gemini.py  places.py  routing.py  astro.py  packet.py  routes.py  main.py
 backend/tests/ test_pipeline.py
 frontend/src/  App.tsx  api.ts  types.ts  components/{MapView,CandidateCard}.tsx
-docs/          one-pager.md  demo-script.md  judging-map.md  architecture.md
+docs/          one-pager.md  demo-script.md  judging-map.md  architecture.md  go-live.md
 scripts/       deploy_cloud_run.sh
 ```
 
