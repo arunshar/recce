@@ -4,8 +4,9 @@
 
 ```
 scene text              -> Gemini scene understanding   -> structured briefs
-brief                   -> Google Places text search    -> candidate locations
-candidate Street View   -> Gemini vision scoring         -> match score + rationale + flags
+brief                   -> Google Places text search    -> candidate pool
+candidate photo / SV    -> Gemini vision scoring         -> match score + rationale + flags
+                           (rank pool by fit, keep best)
 shortlist               -> nearest-neighbor + 2-opt      -> scout-day route with ETAs
 shortlist + briefs      -> astral + Gemini notes         -> shoot-day packet
 ```
@@ -13,7 +14,7 @@ shortlist + briefs      -> astral + Gemini notes         -> shoot-day packet
 ## Components
 
 - `backend/app/gemini.py`: scene extraction (structured output, `list[SceneBrief]`), Street View vision scoring (`VisionScore`), and shoot-day notes (`LocationNotes`).
-- `backend/app/places.py`: Google Places (New) text search, Street View Static, geocoding, and a cinematic SVG placeholder for demo mode. Called server-side only.
+- `backend/app/places.py`: Google Places (New) text search, Place Photos, Street View Static, geocoding, and a cinematic SVG placeholder for demo mode. Scoring prefers each venue's own photo over a Street View frame. Called server-side only.
 - `backend/app/routing.py`: haversine distances, nearest-neighbor seed, 2-opt improvement, and arrival-time construction.
 - `backend/app/astro.py`: sunrise, sunset, and golden-hour windows via `astral`, with timezone resolved from the base city.
 - `backend/app/packet.py`: assembles the packet from deterministic sun math plus Gemini (or canned) production notes.

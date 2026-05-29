@@ -32,6 +32,7 @@ class Candidate(BaseModel):
     place_id: str = ""
     rating: Optional[float] = None
     types: list[str] = Field(default_factory=list)
+    photo_ref: str = ""         # Google Places photo resource name (used for thumbnail + scoring)
     street_view_url: Optional[str] = None
     photo_url: Optional[str] = None
     match_score: int = 0        # 0 to 100

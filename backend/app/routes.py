@@ -1,5 +1,6 @@
 """API routes for the full scout pipeline."""
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import quote
 
@@ -9,11 +10,13 @@ from . import gemini, packet as packet_mod, places, routing
 from .config import get_settings
 from .schemas import (
     AnalyzeRequest,
+    Candidate,
     CandidatesRequest,
     Packet,
     PacketRequest,
     RouteRequest,
     RouteResult,
+    SceneBrief,
 )
 
 router = APIRouter(prefix="/api")
@@ -46,29 +49,38 @@ def analyze(req: AnalyzeRequest) -> dict:
     return {"base_city": base_city, "demo_mode": settings.demo_mode, "briefs": briefs}
 
 
-def _sv_url(cand) -> str:
-    return f"/api/streetview?lat={cand.lat}&lng={cand.lng}&name={quote(cand.name)}"
+def _score_candidate(brief: SceneBrief, cand: Candidate) -> Candidate:
+    """Score one candidate against the brief using its best available image."""
+    image = places.scoring_image_bytes(cand)
+    if image is not None:
+        vs = gemini.score_candidate(brief, image)
+        cand.match_score = vs.match_score
+        cand.rationale = vs.rationale
+        cand.flags = vs.flags
+    cand.street_view_url = places.best_image_url(cand)
+    return cand
 
 
 @router.post("/candidates")
 def candidates(req: CandidatesRequest) -> dict:
-    """For each brief, find candidate locations and score them against the brief."""
+    """For each brief, search a candidate pool, score each against the brief from its
+    own photography, and keep the best matches. Scoring a larger pool and ranking by
+    score lets brand-name false positives fall away."""
     base_city = req.base_city or settings.default_base_city
     center = places.geocode(base_city)
-    out = []
+    live = settings.has_maps and settings.has_gemini
+    out: list[Candidate] = []
     for brief in req.briefs:
-        cands = places.search_candidates(brief, center, req.max_per_brief)
-        for cand in cands:
-            if settings.has_maps and settings.has_gemini:
-                image = places.street_view_image(cand.lat, cand.lng)
-                if image is not None:
-                    vs = gemini.score_candidate(brief, image)
-                    cand.match_score = vs.match_score
-                    cand.rationale = vs.rationale
-                    cand.flags = vs.flags
-            cand.street_view_url = _sv_url(cand)
+        pool_size = max(8, req.max_per_brief * 2) if live else req.max_per_brief
+        cands = places.search_candidates(brief, center, pool_size)
+        if live and cands:
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                cands = list(pool.map(lambda c: _score_candidate(brief, c), cands))
+        else:
+            for cand in cands:
+                cand.street_view_url = places.best_image_url(cand)
         cands.sort(key=lambda c: c.match_score, reverse=True)
-        out.extend(cands)
+        out.extend(cands[: req.max_per_brief])
     return {
         "base_city": base_city,
         "center": {"lat": center[0], "lng": center[1]},
@@ -102,4 +114,15 @@ def streetview(lat: float, lng: float, name: str = "") -> Response:
         if image is not None:
             return Response(content=image, media_type="image/jpeg")
     svg = places.placeholder_svg(name or "Location", "Street View preview in demo mode")
+    return Response(content=svg, media_type="image/svg+xml")
+
+
+@router.get("/placephoto")
+def placephoto(ref: str = "", name: str = "") -> Response:
+    """Proxy a Places photo by resource name (key stays server-side), or a placeholder."""
+    if settings.has_maps and ref:
+        image = places.place_photo_bytes(ref)
+        if image is not None:
+            return Response(content=image, media_type="image/jpeg")
+    svg = places.placeholder_svg(name or "Location", "Photo preview in demo mode")
     return Response(content=svg, media_type="image/svg+xml")

@@ -1,6 +1,6 @@
-"""Google Places (New) + Street View, called server-side only so the Maps key
-never reaches the browser. Falls back to bundled demo candidates and generated
-placeholder imagery when no key is configured.
+"""Google Places (New), Street View, and Place Photos, called server-side only so the
+Maps key never reaches the browser. Falls back to bundled demo candidates and a generated
+placeholder image when no key is configured.
 """
 
 import hashlib
@@ -9,6 +9,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote
 
 import httpx
 
@@ -19,9 +20,9 @@ settings = get_settings()
 DEMO_DIR = Path(__file__).parent / "demo_data"
 
 PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
+PLACE_PHOTO_BASE = "https://places.googleapis.com/v1/"
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 STREETVIEW_URL = "https://maps.googleapis.com/maps/api/streetview"
-STREETVIEW_META_URL = "https://maps.googleapis.com/maps/api/streetview/metadata"
 
 # Fallback city centers for demo mode and geocode failures.
 _CITY_CENTERS = {
@@ -60,7 +61,8 @@ def _cand_id(scene_id: str, place_id: str, name: str) -> str:
 
 def search_candidates(brief: SceneBrief, center: tuple[float, float], max_results: int = 4) -> list[Candidate]:
     """Find real-world candidates for a brief via Places text search. Falls back
-    to demo candidates without a Maps key."""
+    to demo candidates without a Maps key. `max_results` is the size of the pool
+    returned (the caller may score and then trim it)."""
     if not settings.has_maps:
         return demo_candidates_for(brief.scene_id)
 
@@ -69,7 +71,7 @@ def search_candidates(brief: SceneBrief, center: tuple[float, float], max_result
         "X-Goog-Api-Key": settings.maps_api_key,
         "X-Goog-FieldMask": (
             "places.id,places.displayName,places.formattedAddress,"
-            "places.location,places.rating,places.types"
+            "places.location,places.rating,places.types,places.photos"
         ),
     }
     seen: dict[str, Candidate] = {}
@@ -82,7 +84,7 @@ def search_candidates(brief: SceneBrief, center: tuple[float, float], max_result
                     "radius": 50000.0,
                 }
             },
-            "maxResultCount": max_results,
+            "maxResultCount": min(max_results, 10),
         }
         try:
             r = httpx.post(PLACES_SEARCH_URL, headers=headers, json=body, timeout=20)
@@ -96,6 +98,8 @@ def search_candidates(brief: SceneBrief, center: tuple[float, float], max_result
                 continue
             loc = p.get("location", {})
             name = (p.get("displayName") or {}).get("text", "Unnamed location")
+            photos = p.get("photos") or []
+            photo_ref = photos[0].get("name", "") if photos else ""
             cand = Candidate(
                 id=_cand_id(brief.scene_id, pid, name),
                 scene_id=brief.scene_id,
@@ -106,6 +110,7 @@ def search_candidates(brief: SceneBrief, center: tuple[float, float], max_result
                 place_id=pid,
                 rating=p.get("rating"),
                 types=p.get("types", []),
+                photo_ref=photo_ref,
             )
             seen[pid or cand.id] = cand
             if len(seen) >= max_results:
@@ -132,8 +137,44 @@ def street_view_image(lat: float, lng: float, size: str = "640x420") -> Optional
     return None
 
 
+def place_photo_bytes(photo_name: str, max_px: int = 800) -> Optional[bytes]:
+    """Fetch a venue's own Places photo by its resource name."""
+    if not settings.has_maps or not photo_name:
+        return None
+    try:
+        r = httpx.get(
+            PLACE_PHOTO_BASE + photo_name + "/media",
+            params={"maxWidthPx": max_px, "key": settings.maps_api_key},
+            follow_redirects=True,
+            timeout=20,
+        )
+        if r.status_code == 200 and r.headers.get("content-type", "").startswith("image"):
+            return r.content
+    except Exception as exc:
+        print(f"[recce] place photo fetch failed: {exc}")
+    return None
+
+
+def scoring_image_bytes(cand: Candidate) -> Optional[bytes]:
+    """Best image for vision scoring: the venue's own photo, else a Street View frame.
+    The venue photo usually depicts the actual place, so it scores far more reliably
+    than a random Street View angle."""
+    if cand.photo_ref:
+        img = place_photo_bytes(cand.photo_ref)
+        if img:
+            return img
+    return street_view_image(cand.lat, cand.lng)
+
+
+def best_image_url(cand: Candidate) -> str:
+    """Same-origin proxy URL the frontend uses for the thumbnail (key stays server-side)."""
+    if cand.photo_ref:
+        return f"/api/placephoto?ref={quote(cand.photo_ref, safe='')}&name={quote(cand.name)}"
+    return f"/api/streetview?lat={cand.lat}&lng={cand.lng}&name={quote(cand.name)}"
+
+
 def placeholder_svg(name: str, subtitle: str = "") -> str:
-    """A cinematic placeholder frame used when no real Street View image is available."""
+    """A cinematic placeholder frame used when no real image is available."""
     safe = html.escape(name or "Location")
     sub = html.escape(subtitle or "")
     holes = "".join(

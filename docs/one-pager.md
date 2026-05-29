@@ -9,9 +9,12 @@ Finding where to film is still done by hand. A location manager reads the script
 Recce turns a screenplay scene into shoot-ready locations in minutes:
 
 1. Gemini reads the scene and extracts a structured location brief: type, time of day, period, mood, must-have visual elements, and practical needs.
-2. It searches real candidates (Google Places) and scores each against the brief by analyzing Street View imagery (Gemini vision), with a plain-language rationale and practical flags.
+2. It searches a wide pool of real candidates (Google Places) and has Gemini look at each location's own photography to score how well it fits the brief, on look and mood, with a plain-language rationale and practical flags. Ranking the full pool by fit lets the genuine matches rise and brand-name lookalikes fall away (a search for a "lighthouse" returns actual lighthouses, not companies named Lighthouse).
 3. You shortlist on a map, and Recce optimizes an efficient scout-day route across your picks.
 4. It generates a shoot-day packet per location: real golden-hour windows, parking, power, permit pointers, and a starter shotlist.
+
+## The core idea
+Recce does not keyword-match. It judges each real location's imagery against the director's brief the way a scout does, so a score is a defensible verdict (look plus tone), not a text-match. That visual, brief-aware ranking is the hard part and the moat.
 
 ## Why now
 Multimodal models can finally read a script for intent and judge a place from an image the way a scout does. Content volume keeps rising across studios, streamers, and agencies while location teams stay small.

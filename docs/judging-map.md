@@ -2,7 +2,7 @@
 
 **Technical feasibility.** A working, deployable prototype: FastAPI plus Gemini (structured output and vision), Google Places and Street View, a custom route optimizer, real sun math, and a React/Leaflet UI, served as one Cloud Run container. Demo mode runs the full flow with no keys.
 
-**Innovation and novelty.** A script-to-shoot-ready agent. The novel pieces: Gemini scores Street View imagery against a director's brief (not keyword search), a scout-day route is optimized over the shortlist, and golden-hour windows are computed per location and date.
+**Innovation and novelty.** A script-to-shoot-ready agent. The novel pieces: Gemini scores each candidate's real photography against a director's brief on look and mood (not keyword search), ranking a wide pool so genuine matches rise and lookalikes fall away; a scout-day route is optimized over the shortlist; and golden-hour windows are computed per location and date.
 
 **Real-world applicability.** Location scouting is a real, costly, manual workflow. The output is concrete: a scored shortlist with rationales and a shoot-day packet a crew could actually use.
 

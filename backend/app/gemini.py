@@ -45,7 +45,9 @@ For each brief:
 - practical_needs: production logistics this location implies (access, power, parking,
   permits, effects, safety, crowd control).
 - search_queries: 3 to 5 specific Google Places queries a scout would type to find real
-  candidate places near the production base. Make them findable and specific, and include
+  candidate places near the production base. Describe the physical place or a known landmark
+  type, and avoid brand or company names (for a lighthouse, target an actual lighthouse
+  landmark, not businesses named "Lighthouse"). Make them findable and specific, and include
   the base city or a nearby area in each query.
 
 Be concrete and production-minded. Prefer real, locatable place descriptions."""
