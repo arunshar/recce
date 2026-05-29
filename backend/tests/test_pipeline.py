@@ -1,7 +1,11 @@
 """Smoke tests for the Recce pipeline in demo mode (no API keys required)."""
+import os
 
-from fastapi.testclient import TestClient
+from starlette.testclient import TestClient
 
+# Force demo mode for tests, even if local .env contains API keys.
+os.environ["GEMINI_API_KEY"] = ""
+os.environ["GOOGLE_MAPS_API_KEY"] = ""
 from app.main import app
 from app.routing import _nearest_neighbor, _tour_distance, _two_opt
 
