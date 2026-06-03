@@ -10,6 +10,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
+from . import script_analysis
 from .config import get_settings
 from .schemas import LocationNotes, SceneBrief, VisionScore
 
@@ -63,6 +64,9 @@ def extract_scene_briefs(
     base_city = base_city or settings.default_base_city
     client = _get_client()
     if client is None or not scene_text.strip():
+        segmented = script_analysis.extract_scene_briefs(scene_text, base_city) if scene_text.strip() else []
+        if segmented:
+            return segmented
         return _demo_briefs()
 
     from google.genai import types
@@ -95,6 +99,9 @@ def extract_scene_briefs(
             return briefs
     except Exception as exc:  # any API/parse error falls back to demo data
         print(f"[recce] Gemini scene extraction failed, using demo briefs: {exc}")
+    segmented = script_analysis.extract_scene_briefs(scene_text, base_city)
+    if segmented:
+        return segmented
     return _demo_briefs()
 
 
@@ -256,7 +263,12 @@ def _generate_image_cached(prompt: str) -> Optional[bytes]:
 
 def generate_mood_image(brief: SceneBrief) -> Optional[bytes]:
     """A cinematic concept frame for a scene's mood. None when no key/model is available."""
-    return _generate_image_cached(_mood_prompt(brief))
+    return generate_mood_image_for_prompt(_mood_prompt(brief))
+
+
+def generate_mood_image_for_prompt(prompt: str) -> Optional[bytes]:
+    """Generate a concept frame from an already-assembled prompt."""
+    return _generate_image_cached(prompt)
 
 
 # ---- demo fallbacks ----

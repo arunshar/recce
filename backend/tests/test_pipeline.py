@@ -44,6 +44,9 @@ def test_full_pipeline_demo():
     assert len(packet["locations"]) == len(shortlist)
     # Golden-hour math runs even in demo mode.
     assert packet["locations"][0]["golden_hour_pm"]
+    assert packet["schedule"]
+    assert packet["locations"][0]["weather"]["summary"]
+    assert packet["locations"][0]["concept_image_url"]
 
 
 def test_streetview_placeholder():
@@ -58,3 +61,68 @@ def test_two_opt_never_worse_than_nearest_neighbor():
     opt = _two_opt(pts, nn)
     assert _tour_distance(pts, opt) <= _tour_distance(pts, nn) + 1e-9
     assert opt[0] == 0  # base stays first
+
+
+def test_script_segmentation_endpoint():
+    script = """INT. COFFEE SHOP - DAY
+
+MAYA waits by the window.
+
+EXT. COASTAL PIER - DUSK
+
+MAYA
+We made it.
+
+JULES
+Before sunset.
+"""
+    r = client.post("/api/script/segments", json={"script_text": script})
+    assert r.status_code == 200
+    scenes = r.json()["scenes"]
+    assert [s["scene_id"] for s in scenes] == ["S1", "S2"]
+    assert scenes[1]["location_type"] == "Coastal Pier"
+    assert "Maya" in scenes[1]["characters"]
+
+
+def test_open_location_candidates_include_permit_metadata():
+    brief = {
+        "scene_id": "S99",
+        "slugline": "EXT. COASTAL PIER - DUSK",
+        "int_ext": "EXT",
+        "location_type": "coastal pier",
+        "time_of_day": "DUSK",
+        "period": "present day",
+        "mood": ["romantic"],
+        "key_visual_elements": ["pier", "boardwalk"],
+        "practical_needs": ["crowd control"],
+        "search_queries": ["coastal pier Los Angeles"],
+    }
+    r = client.post("/api/candidates", json={"briefs": [brief], "base_city": "Los Angeles, CA"})
+    assert r.status_code == 200
+    cands = r.json()["candidates"]
+    assert any(c["name"] == "Santa Monica Pier" and c["permit_required"] for c in cands)
+
+
+def test_packet_carries_permit_weather_and_schedule():
+    brief = {
+        "scene_id": "S99",
+        "slugline": "EXT. COASTAL PIER - DUSK",
+        "int_ext": "EXT",
+        "location_type": "coastal pier",
+        "time_of_day": "DUSK",
+        "period": "present day",
+        "mood": ["romantic"],
+        "key_visual_elements": ["pier", "boardwalk"],
+        "practical_needs": ["crowd control"],
+        "search_queries": ["coastal pier Los Angeles"],
+    }
+    candidate = client.post("/api/candidates", json={"briefs": [brief]}).json()["candidates"][0]
+    packet = client.post(
+        "/api/packet",
+        json={"candidates": [candidate], "briefs": [brief], "shoot_date": "2026-06-13"},
+    ).json()
+    loc = packet["locations"][0]
+    assert loc["weather"]["source"] == "demo"
+    assert loc["permit_note"]
+    assert loc["concept_image_url"].startswith("/api/moodboard/placeholder")
+    assert packet["schedule"][0]["stops"][0]["weather_summary"]

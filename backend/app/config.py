@@ -27,6 +27,10 @@ class Settings:
         self.image_model = os.getenv("RECCE_IMAGE_MODEL", "imagen-4.0-fast-generate-001").strip()
         self.image_fallback_model = os.getenv("RECCE_IMAGE_FALLBACK_MODEL", "gemini-2.5-flash-image").strip()
         self.default_base_city = os.getenv("RECCE_BASE_CITY", "Los Angeles, CA").strip()
+        self.osrm_base_url = os.getenv("RECCE_OSRM_URL", "").strip().rstrip("/")
+        self.weather_provider = os.getenv("RECCE_WEATHER_PROVIDER", "demo").strip().lower()
+        self.openweather_api_key = os.getenv("OPENWEATHER_API_KEY", "").strip()
+        self.location_data_path = os.getenv("RECCE_LOCATION_DATA", "").strip()
 
         origins = os.getenv("RECCE_CORS_ORIGINS", "*").strip()
         self.cors_origins = ["*"] if origins in ("", "*") else [o.strip() for o in origins.split(",")]
@@ -38,6 +42,10 @@ class Settings:
     @property
     def has_maps(self) -> bool:
         return bool(self.maps_api_key)
+
+    @property
+    def has_osrm(self) -> bool:
+        return bool(self.osrm_base_url)
 
     @property
     def demo_mode(self) -> bool:

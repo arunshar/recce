@@ -20,6 +20,34 @@ class SceneBrief(BaseModel):
     search_queries: list[str] = Field(default_factory=list)
 
 
+class ScriptScene(BaseModel):
+    """One screenplay scene segment extracted from a full script."""
+
+    scene_id: str
+    slugline: str
+    scene_text: str = ""
+    int_ext: str = ""
+    location_type: str = ""
+    time_of_day: str = ""
+    characters: list[str] = Field(default_factory=list)
+
+
+class LocationRecord(BaseModel):
+    """Normalized open-data location / permit record."""
+
+    id: str
+    name: str
+    address: str = ""
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    categories: list[str] = Field(default_factory=list)
+    permit_required: bool = False
+    permit_status: str = ""
+    contact: str = ""
+    restrictions: list[str] = Field(default_factory=list)
+    source: str = "open_data"
+
+
 class Candidate(BaseModel):
     """A real-world location candidate matched to a scene brief."""
 
@@ -38,6 +66,12 @@ class Candidate(BaseModel):
     match_score: int = 0        # 0 to 100
     rationale: str = ""
     flags: list[str] = Field(default_factory=list)
+    source: str = "google_places"
+    permit_required: bool = False
+    permit_status: str = ""
+    permit_contact: str = ""
+    permit_restrictions: list[str] = Field(default_factory=list)
+    rights_notes: list[str] = Field(default_factory=list)
 
 
 class VisionScore(BaseModel):
@@ -66,20 +100,57 @@ class RouteResult(BaseModel):
     stops: list[RouteStop] = Field(default_factory=list)
     total_distance_km: float = 0.0
     total_drive_minutes: float = 0.0
+    route_method: str = "haversine_2opt"
+
+
+class WeatherSummary(BaseModel):
+    summary: str = ""
+    temperature_f: Optional[float] = None
+    precipitation_probability: Optional[float] = None
+    wind_mph: Optional[float] = None
+    source: str = "demo"
+
+
+class ScheduleStop(BaseModel):
+    order: int
+    scene_id: str = ""
+    location_name: str
+    start_local: str = ""
+    golden_window: str = ""
+    weather_summary: str = ""
+
+
+class ScheduleDay(BaseModel):
+    day: int
+    date: str
+    stops: list[ScheduleStop] = Field(default_factory=list)
 
 
 class PacketLocation(BaseModel):
+    scene_id: str = ""
+    candidate_id: str = ""
     name: str
     address: str = ""
     lat: float
     lng: float
+    concept_image_url: str = ""
+    concept_prompt: str = ""
+    sunrise: str = ""
+    sunset: str = ""
+    golden_hour_morning_end: str = ""
+    golden_hour_evening_start: str = ""
     golden_hour_am: str = ""
     golden_hour_pm: str = ""
     sun_note: str = ""
+    weather: WeatherSummary = Field(default_factory=WeatherSummary)
     parking: list[str] = Field(default_factory=list)
     nearest_hospital: str = ""
     power_note: str = ""
     permit_note: str = ""
+    permit_required: bool = False
+    permit_status: str = ""
+    permit_contact: str = ""
+    permit_restrictions: list[str] = Field(default_factory=list)
     shotlist: list[str] = Field(default_factory=list)
 
 
@@ -88,6 +159,7 @@ class Packet(BaseModel):
     shoot_date: str = ""
     base_city: str = ""
     locations: list[PacketLocation] = Field(default_factory=list)
+    schedule: list[ScheduleDay] = Field(default_factory=list)
     notes: str = ""
 
 
@@ -108,6 +180,10 @@ class AnalyzeRequest(BaseModel):
     base_city: Optional[str] = None
     era: Optional[str] = None
     budget: Optional[str] = None
+
+
+class SegmentScriptRequest(BaseModel):
+    script_text: str
 
 
 class CandidatesRequest(BaseModel):

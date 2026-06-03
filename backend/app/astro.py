@@ -36,13 +36,25 @@ def _fmt(dt) -> str:
 
 def golden_windows(lat: float, lng: float, on: Date, tz: str) -> dict:
     """Real morning/evening golden-hour windows plus a sunrise/sunset note."""
-    out = {"golden_hour_am": "", "golden_hour_pm": "", "sun_note": ""}
+    out = {
+        "sunrise": "",
+        "sunset": "",
+        "golden_hour_morning_end": "",
+        "golden_hour_evening_start": "",
+        "golden_hour_am": "",
+        "golden_hour_pm": "",
+        "sun_note": "",
+    }
     try:
         obs = Observer(latitude=lat, longitude=lng)
         zone = ZoneInfo(tz)
         s = sun(obs, date=on, tzinfo=zone)
         gh_am = golden_hour(obs, on, SunDirection.RISING, tzinfo=zone)
         gh_pm = golden_hour(obs, on, SunDirection.SETTING, tzinfo=zone)
+        out["sunrise"] = _fmt(s["sunrise"])
+        out["sunset"] = _fmt(s["sunset"])
+        out["golden_hour_morning_end"] = _fmt(gh_am[1])
+        out["golden_hour_evening_start"] = _fmt(gh_pm[0])
         out["golden_hour_am"] = f"{_fmt(gh_am[0])}-{_fmt(gh_am[1])}"
         out["golden_hour_pm"] = f"{_fmt(gh_pm[0])}-{_fmt(gh_pm[1])}"
         out["sun_note"] = (

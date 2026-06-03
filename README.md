@@ -4,11 +4,12 @@
 
 **Live demo:** https://recce-216756172879.us-central1.run.app (runs in demo mode, no setup needed)
 
-Paste a screenplay scene. Recce uses Gemini to read it like a location manager
-would, finds and visually scores real-world filming locations against the
-director's brief, maps them, plans an efficient scout-day route across the ones
-you shortlist, and generates a shoot-day logistics packet (golden-hour timing,
-parking, power, permits, a starter shotlist).
+Paste a screenplay scene or upload a text-like full script. Recce reads it like
+a location manager would, finds and visually scores real-world filming locations
+against the director's brief, maps them, creates concept mood-board frames, plans
+an efficient scout-day route across the ones you shortlist, and generates a
+shoot-day logistics packet (golden-hour timing, weather, parking, power, permits,
+restrictions, and a starter shotlist).
 
 A workflow that takes a location department days or weeks, compressed into
 minutes.
@@ -27,7 +28,7 @@ screenplay scene
 [ Gemini ]  scene understanding -> structured location briefs
       |
       v
-[ Google Places ]  candidate real-world locations per brief
+[ Google Places + open data ]  candidate real-world locations + permit metadata
       |
       v
 [ venue photo + Gemini vision ]  score each candidate vs. the brief (0-100 + why)
@@ -36,10 +37,10 @@ screenplay scene
 [ map + shortlist ]  you pick the contenders
       |
       v
-[ 2-opt route optimizer + astral ]  scout-day route, golden-hour aware
+[ OSRM or 2-opt + astral + weather ]  scout-day route, golden-hour aware
       |
       v
-[ Gemini ]  shoot-day packet  +  [ Imagen ]  per-scene mood-board frames
+[ Gemini ]  shoot-day packet, schedule  +  [ Imagen ]  per-scene mood-board frames
 ```
 
 - **Frontend:** Vite + React + TypeScript + Tailwind, map via Leaflet +
@@ -47,8 +48,11 @@ screenplay scene
 - **Backend:** FastAPI. Gemini via the `google-genai` SDK. Google Places and
   Street View are called server-side only, so no map key ever ships to the
   browser.
-- **Routing:** our own scout-day optimizer (nearest-neighbor seed + 2-opt) over
-  shortlisted locations with travel-time estimates.
+- **Routing:** optional OSRM Trip routing (`RECCE_OSRM_URL`) with our own
+  scout-day optimizer (nearest-neighbor seed + 2-opt) as the no-service fallback.
+- **Open data:** normalized permit/location records can be loaded from
+  `RECCE_LOCATION_DATA`; `scripts/data_ingest/ingest_open_locations.py` can fetch
+  NYC/SF datasets or import a CSV.
 - **Deploy:** one self-contained container (Docker / Cloud Run).
 
 ## Run with Docker (one command)
@@ -119,18 +123,23 @@ the keys in `.env` first to deploy the live pipeline; otherwise it runs in demo 
 | --- | --- | --- |
 | `GEMINI_API_KEY` | https://aistudio.google.com/apikey | scene understanding, vision scoring, packet, mood boards |
 | `GOOGLE_MAPS_API_KEY` | Google Maps Platform (Places API New + Street View Static + Geocoding) | live candidate search and Street View |
+| `RECCE_LOCATION_DATA` | local JSON path | normalized open location / permit records |
+| `RECCE_OSRM_URL` | OSRM service URL | real road-network route ordering |
+| `RECCE_WEATHER_PROVIDER` | `demo`, `open-meteo`, or `openweather` | packet weather summaries |
+| `OPENWEATHER_API_KEY` | OpenWeatherMap | only if `RECCE_WEATHER_PROVIDER=openweather` |
 
-Without keys, demo mode covers the full flow.
+Without keys, demo mode covers the full flow with bundled candidates, demo
+weather, deterministic script segmentation, and placeholder concept frames.
 
 ## Project layout
 
 ```
 Dockerfile  docker-compose.yml          # one-command container
-backend/app/  gemini.py  places.py  routing.py  astro.py  packet.py  routes.py  main.py
+backend/app/  gemini.py  places.py  permits.py  routing.py  osrm.py  astro.py  weather.py  packet.py  routes.py
 backend/tests/ test_pipeline.py
 frontend/src/  App.tsx  api.ts  types.ts  components/{MapView,CandidateCard}.tsx
 docs/          one-pager.md  demo-script.md  judging-map.md  architecture.md  go-live.md
-scripts/       deploy_cloud_run.sh
+scripts/       deploy_cloud_run.sh  data_ingest/ingest_open_locations.py
 ```
 
 ## Docs

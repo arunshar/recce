@@ -2,11 +2,10 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from urllib.parse import quote
 
 from fastapi import APIRouter, Response
 
-from . import gemini, packet as packet_mod, places, routing
+from . import gemini, moodboard as moodboard_mod, packet as packet_mod, places, routing, script_analysis
 from .config import get_settings
 from .schemas import (
     AnalyzeRequest,
@@ -17,6 +16,7 @@ from .schemas import (
     RouteRequest,
     RouteResult,
     SceneBrief,
+    SegmentScriptRequest,
 )
 
 router = APIRouter(prefix="/api")
@@ -31,7 +31,9 @@ def health() -> dict:
         "demo_mode": settings.demo_mode,
         "has_gemini": settings.has_gemini,
         "has_maps": settings.has_maps,
+        "has_osrm": settings.has_osrm,
         "gemini_model": settings.gemini_model,
+        "weather_provider": settings.weather_provider,
     }
 
 
@@ -49,6 +51,12 @@ def analyze(req: AnalyzeRequest) -> dict:
     return {"base_city": base_city, "demo_mode": settings.demo_mode, "briefs": briefs}
 
 
+@router.post("/script/segments")
+def script_segments(req: SegmentScriptRequest) -> dict:
+    """Full script text -> deterministic scene segments for batch selection."""
+    return {"scenes": script_analysis.segment_script(req.script_text)}
+
+
 def _score_candidate(brief: SceneBrief, cand: Candidate) -> Candidate:
     """Score one candidate against the brief using its best available image."""
     image = places.scoring_image_bytes(cand)
@@ -56,7 +64,7 @@ def _score_candidate(brief: SceneBrief, cand: Candidate) -> Candidate:
         vs = gemini.score_candidate(brief, image)
         cand.match_score = vs.match_score
         cand.rationale = vs.rationale
-        cand.flags = vs.flags
+        cand.flags = list(dict.fromkeys([*vs.flags, *cand.flags]))
     cand.street_view_url = places.best_image_url(cand)
     return cand
 
@@ -131,11 +139,16 @@ def placephoto(ref: str = "", name: str = "") -> Response:
 @router.post("/moodboard")
 def moodboard(brief: SceneBrief) -> Response:
     """Generate a cinematic concept frame for a scene's mood (Imagen / Gemini image)."""
-    if settings.has_gemini:
-        image = gemini.generate_mood_image(brief)
-        if image is not None:
-            return Response(content=image, media_type="image/png")
+    image = moodboard_mod.generate_image_bytes(brief)
+    if image is not None:
+        return Response(content=image, media_type="image/png")
     svg = places.placeholder_svg(
         brief.slugline or brief.location_type or "Scene", "Mood board preview in demo mode"
     )
+    return Response(content=svg, media_type="image/svg+xml")
+
+
+@router.get("/moodboard/placeholder")
+def moodboard_placeholder(name: str = "Scene", subtitle: str = "Concept art preview in demo mode") -> Response:
+    svg = places.placeholder_svg(name or "Scene", subtitle or "Concept art preview in demo mode")
     return Response(content=svg, media_type="image/svg+xml")

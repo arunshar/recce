@@ -13,6 +13,7 @@ from urllib.parse import quote
 
 import httpx
 
+from . import permits
 from .config import get_settings
 from .schemas import Candidate, SceneBrief
 
@@ -64,7 +65,7 @@ def search_candidates(brief: SceneBrief, center: tuple[float, float], max_result
     to demo candidates without a Maps key. `max_results` is the size of the pool
     returned (the caller may score and then trim it)."""
     if not settings.has_maps:
-        return demo_candidates_for(brief.scene_id)
+        return permits.merge_open_locations(brief, center, demo_candidates_for(brief.scene_id), max_results)
 
     headers = {
         "Content-Type": "application/json",
@@ -117,7 +118,7 @@ def search_candidates(brief: SceneBrief, center: tuple[float, float], max_result
                 break
         if len(seen) >= max_results:
             break
-    return list(seen.values())[:max_results]
+    return permits.merge_open_locations(brief, center, list(seen.values()), max_results)
 
 
 def street_view_image(lat: float, lng: float, size: str = "640x420") -> Optional[bytes]:

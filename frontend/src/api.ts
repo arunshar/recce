@@ -1,4 +1,4 @@
-import type { SceneBrief, Candidate, RouteResult, Packet, Health, LatLng } from './types'
+import type { SceneBrief, ScriptScene, Candidate, RouteResult, Packet, Health, LatLng } from './types'
 
 async function getJSON<T>(url: string): Promise<T> {
   const r = await fetch(url)
@@ -25,6 +25,9 @@ export const analyzeScene = (scene_text: string, base_city: string) =>
     scene_text,
     base_city,
   })
+
+export const segmentScript = (script_text: string) =>
+  postJSON<{ scenes: ScriptScene[] }>('/api/script/segments', { script_text })
 
 export const findCandidates = (briefs: SceneBrief[], base_city: string) =>
   postJSON<{ base_city: string; center: LatLng; demo_mode: boolean; candidates: Candidate[] }>(

@@ -5,6 +5,7 @@ logic (no external routing API required)."""
 import math
 from datetime import datetime, timedelta
 
+from . import osrm
 from .schemas import Candidate, RouteResult, RouteStop
 
 AVG_KMH = 38.0   # rough city driving speed for ETA estimates
@@ -49,23 +50,32 @@ def _two_opt(points: list[tuple[float, float]], order: list[int]) -> list[int]:
     return best
 
 
-def optimize(base: tuple[float, float], base_name: str, candidates: list[Candidate]) -> RouteResult:
-    if not candidates:
-        return RouteResult(base_name=base_name, base_lat=base[0], base_lng=base[1])
-
-    points = [base] + [(c.lat, c.lng) for c in candidates]
-    order = _two_opt(points, _nearest_neighbor(points, start=0))
-
+def _build_result(
+    base: tuple[float, float],
+    base_name: str,
+    candidates: list[Candidate],
+    candidate_order: list[int],
+    method: str,
+    leg_minutes: list[float] | None = None,
+    total_distance_km: float | None = None,
+) -> RouteResult:
     clock = datetime(2026, 1, 1, START_HOUR, 0)     # date is irrelevant; we only render times
     stops: list[RouteStop] = []
     total_km = 0.0
-    prev = order[0]
-    for step, idx in enumerate(order[1:], start=1):
-        leg_km = haversine_km(points[prev], points[idx])
-        drive_min = leg_km / AVG_KMH * 60
+    prev = base
+
+    for step, cand_idx in enumerate(candidate_order, start=1):
+        cand = candidates[cand_idx]
+        point = (cand.lat, cand.lng)
+        leg_km = haversine_km(prev, point)
+        drive_min = leg_minutes[step - 1] if leg_minutes and step - 1 < len(leg_minutes) else leg_km / AVG_KMH * 60
         total_km += leg_km
         clock += timedelta(minutes=drive_min)
-        cand = candidates[idx - 1]                  # points[1:] map to candidates[0:]
+        window_bits = []
+        if cand.permit_required:
+            window_bits.append("permit review")
+        if cand.permit_restrictions:
+            window_bits.append(cand.permit_restrictions[0])
         stops.append(
             RouteStop(
                 order=step,
@@ -75,10 +85,11 @@ def optimize(base: tuple[float, float], base_name: str, candidates: list[Candida
                 lng=cand.lng,
                 drive_minutes_from_prev=round(drive_min, 1),
                 arrive_local=clock.strftime("%-I:%M %p"),
+                window_note=", ".join(window_bits),
             )
         )
         clock += timedelta(minutes=DWELL_MIN)
-        prev = idx
+        prev = point
 
     total_min = sum(s.drive_minutes_from_prev for s in stops) + DWELL_MIN * len(stops)
     return RouteResult(
@@ -86,6 +97,28 @@ def optimize(base: tuple[float, float], base_name: str, candidates: list[Candida
         base_lat=base[0],
         base_lng=base[1],
         stops=stops,
-        total_distance_km=round(total_km, 1),
+        total_distance_km=round(total_distance_km if total_distance_km is not None else total_km, 1),
         total_drive_minutes=round(total_min, 1),
+        route_method=method,
     )
+
+
+def optimize(base: tuple[float, float], base_name: str, candidates: list[Candidate]) -> RouteResult:
+    if not candidates:
+        return RouteResult(base_name=base_name, base_lat=base[0], base_lng=base[1])
+
+    osrm_trip = osrm.optimize_trip(base, candidates)
+    if osrm_trip is not None:
+        return _build_result(
+            base,
+            base_name,
+            candidates,
+            osrm_trip.candidate_order,
+            "osrm_trip",
+            osrm_trip.leg_minutes,
+            osrm_trip.total_distance_km,
+        )
+
+    points = [base] + [(c.lat, c.lng) for c in candidates]
+    order = _two_opt(points, _nearest_neighbor(points, start=0))
+    return _build_result(base, base_name, candidates, [idx - 1 for idx in order[1:]], "haversine_2opt")
