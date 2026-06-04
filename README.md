@@ -107,10 +107,20 @@ Open http://localhost:5173, click **Sample**, then **Find locations**.
 
 ```bash
 make build          # frontend -> backend/app/static (for the local single-port run)
-make test           # backend pytest smoke tests (demo mode, no keys)
+make test           # all backend pytest tests (demo mode, no keys)
+make test-frontend  # frontend build + UI smoke + lint
 make docker-build   # build the recce:latest image
 make up             # docker compose up --build
 bash scripts/deploy_cloud_run.sh
+```
+
+The test suite is split into eight practical categories: unit, integration,
+end-to-end, smoke, contract, regression, performance, and security/config.
+See [docs/testing.md](docs/testing.md) for commands and coverage. To smoke-test
+a running service, use:
+
+```bash
+python3 scripts/smoke_api.py --base-url http://127.0.0.1:8000
 ```
 
 The deploy script runs `gcloud run deploy --source .`, which builds the image
@@ -139,12 +149,26 @@ backend/app/  gemini.py  places.py  permits.py  routing.py  osrm.py  astro.py  w
 backend/tests/ test_pipeline.py
 frontend/src/  App.tsx  api.ts  types.ts  components/{MapView,CandidateCard}.tsx
 docs/          one-pager.md  demo-script.md  judging-map.md  architecture.md  go-live.md
-scripts/       deploy_cloud_run.sh  data_ingest/ingest_open_locations.py
+k8s/base/      Kubernetes manifests for scalable deployment
+scripts/       deploy_cloud_run.sh  smoke_api.py  k8s_smoke.sh  data_ingest/ingest_open_locations.py
+```
+
+## Kubernetes
+
+Recce includes a Kustomize base under `k8s/base` with a non-root Deployment,
+Service, health probes, HPA, PodDisruptionBudget, NetworkPolicy, and optional
+Ingress. See [k8s/README.md](k8s/README.md).
+
+```bash
+kubectl apply -k k8s/base
+kubectl rollout status deployment/recce -n recce
+scripts/k8s_smoke.sh
 ```
 
 ## Docs
 
 - [docs/submission.md](docs/submission.md): staged content for the hackathon submission.
+- [docs/testing.md](docs/testing.md): test matrix, commands, and smoke workflows.
 - [docs/go-live.md](docs/go-live.md): step-by-step to add keys, run live, and deploy.
 - [docs/architecture.md](docs/architecture.md): data flow, components, design decisions.
 - [docs/one-pager.md](docs/one-pager.md): the submission one-pager.

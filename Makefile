@@ -1,4 +1,4 @@
-.PHONY: install backend frontend dev build test docker-build docker-run up deploy clean
+.PHONY: install backend frontend dev build test test-unit test-integration test-e2e test-smoke test-contract test-regression test-performance test-security test-k8s test-frontend test-api-smoke docker-build docker-run up deploy k8s-smoke clean
 
 install:
 	cd backend && python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
@@ -23,6 +23,39 @@ build:
 test:
 	cd backend && . .venv/bin/activate && pip install -q -r requirements-dev.txt && python -m pytest -q
 
+test-unit:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m unit
+
+test-integration:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m integration
+
+test-e2e:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m e2e
+
+test-smoke:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m smoke
+
+test-contract:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m contract
+
+test-regression:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m regression
+
+test-performance:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m performance
+
+test-security:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m security
+
+test-k8s:
+	cd backend && . .venv/bin/activate && python -m pytest -q -m k8s
+
+test-frontend:
+	cd frontend && npm run build && npm run smoke && npm run lint
+
+test-api-smoke:
+	python3 scripts/smoke_api.py --base-url $${RECCE_SMOKE_URL:-http://127.0.0.1:8000}
+
 docker-build:
 	docker build -t recce:latest .
 
@@ -34,6 +67,9 @@ up:
 
 deploy:
 	bash scripts/deploy_cloud_run.sh
+
+k8s-smoke:
+	scripts/k8s_smoke.sh
 
 clean:
 	rm -rf backend/.venv frontend/node_modules frontend/dist

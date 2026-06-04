@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recce-config
+data:
+  PORT: "8080"
+  RECCE_BASE_CITY: "Los Angeles, CA"
+  RECCE_CORS_ORIGINS: "*"
+  RECCE_WEATHER_PROVIDER: "demo"
+  RECCE_OSRM_URL: ""
+  RECCE_LOCATION_DATA: ""
+  GEMINI_MODEL: "gemini-2.5-flash"
+  GEMINI_PRO_MODEL: "gemini-2.5-pro"
+  RECCE_IMAGE_MODEL: "imagen-4.0-fast-generate-001"

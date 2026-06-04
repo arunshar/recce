@@ -26,6 +26,8 @@ shortlist + briefs       -> astral + weather + Gemini notes     -> packet + sche
 - `backend/app/routes.py`: the API surface. `main.py` serves the API and the built single-page app from one process.
 - `frontend/`: Vite + React + TypeScript + Tailwind, with Leaflet + OpenStreetMap for the map.
 - `scripts/data_ingest/ingest_open_locations.py`: downloads NYC/SF open film datasets or imports a CSV and writes normalized location JSON.
+- `scripts/smoke_api.py`: end-to-end smoke runner for a local, Kubernetes, or deployed service URL.
+- `k8s/base/`: Kustomize deployment base with health probes, non-root container security, HPA, PDB, NetworkPolicy, Service, and optional Ingress.
 
 ## Design decisions
 
@@ -50,6 +52,14 @@ shortlist + briefs       -> astral + weather + Gemini notes     -> packet + sche
 
 - One container, anywhere: `docker compose up --build` (or `make up`), then open http://localhost:8000. A multi-stage Dockerfile builds the frontend and backend in-image; demo mode needs no keys.
 - Cloud Run: `bash scripts/deploy_cloud_run.sh` runs `gcloud run deploy --source .`, which builds the image remotely with Cloud Build (no local Docker needed) and returns a public URL.
+- Kubernetes: `kubectl apply -k k8s/base` deploys the scalable base. The image runs as UID `10001`, probes `/api/health`, and can be smoke-tested with `scripts/k8s_smoke.sh`.
+
+## Testing
+
+The backend test suite is organized into eight markers: `unit`, `integration`,
+`e2e`, `smoke`, `contract`, `regression`, `performance`, and `security`. The
+Kubernetes manifests have separate `k8s` contract/security checks. Frontend smoke
+coverage runs through `npm run build`, `npm run smoke`, and `npm run lint`.
 
 ## Roadmap
 

@@ -17,4 +17,8 @@ services:
       GEMINI_PRO_MODEL: ${GEMINI_PRO_MODEL:-gemini-2.5-pro}
       RECCE_IMAGE_MODEL: ${RECCE_IMAGE_MODEL:-imagen-4.0-fast-generate-001}
       RECCE_BASE_CITY: ${RECCE_BASE_CITY:-Los Angeles, CA}
+      RECCE_LOCATION_DATA: ${RECCE_LOCATION_DATA:-}
+      RECCE_OSRM_URL: ${RECCE_OSRM_URL:-}
+      RECCE_WEATHER_PROVIDER: ${RECCE_WEATHER_PROVIDER:-demo}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
     restart: unless-stopped

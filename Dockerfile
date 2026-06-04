@@ -23,6 +23,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY --from=frontend /app/frontend/dist ./app/static
 
+RUN useradd --create-home --uid 10001 recce \
+  && chown -R recce:recce /app
+USER 10001
+
 EXPOSE 8080
 
 # Marks the container healthy once the API responds. start-period covers the
